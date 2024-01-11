@@ -1,110 +1,159 @@
 package com.example.picsplay5
 
-import android.os.Bundle
-import android.util.Log
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.RelativeLayout
+
+
+import android.app.Activity
+import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.renderscript.ScriptGroup.Input
+import android.util.Log
+import android.widget.Button
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.picsplay5.R
+import com.example.picsplay5.SubActivity
+import java.io.IOException
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
+    private var selectedImageUri: Uri? = null
+
+
+//    private val cameraLauncher: ActivityResultLauncher<Intent> =
+//        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+//            if (result.resultCode == Activity.RESULT_OK) {
+//                val data: Intent? = result.data
+//                val imageBitmap = data?.extras?.get("data") as Bitmap?
+//
+//                selectedImageUri = imageBitmap?.let { bitmap ->
+//                    try {
+//                        applicationContext.contentResolver.insert(
+//                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//                            ContentValues().apply {
+//                                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+//                                put(MediaStore.Images.Media.ORIENTATION, 0)
+//                            }
+//                        )?.also { uri ->
+//                            applicationContext.contentResolver.openOutputStream(uri)?.use { outputStream ->
+//                                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+//                            }
+//                        }
+//                    } catch (e: IOException) {
+//                        e.printStackTrace()
+//                        null
+//                    }
+//                }
+//
+//                startEditingActivity()
+//            }
+//        }
+
+
+
+
+
+    private val galleryLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+
+                val data: Intent? = result.data
+                data?.data?.let {
+                    selectedImageUri = it
+                }
+                startEditingActivity()
+            }
+        }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+//        val requestGalleryLauncher = registerForActivityResult(
+//            ActivityResultContracts.StartActivityForResult())
+//
+//        {
+//
+//            try {
+//                val calRatio = calculateInSampleSize(
+//                    it.data!!.data!!,
+//                    resources.getDimensionPixelSize(R.dimen.imgSize),
+//                    resources.getDimensionPixelSize(R.dimen.imgSize),
+//                )
+//                val option = BitmapFactory.Options()
+//                option.inSampleSize = calRatio
+//
+//
+//            }
+//        }
 
 
-        val relativeLayout = RelativeLayout(this)
-        relativeLayout.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        val cameraButton: Button = findViewById(R.id.cameraButton)
+        val galleryButton: Button = findViewById(R.id.galleryButton)
+
+        cameraButton.setOnClickListener {
+            openCamera()
+        }
+
+        galleryButton.setOnClickListener {
+            openGallery()
+        }
 
 
-        val imageView = ImageView(this)
-        val imageParams = RelativeLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        imageView.layoutParams = imageParams
-        imageView.setImageResource(R.drawable.test)
-        imageView.setBackgroundColor(resources.getColor(android.R.color.white))
+    }
+    private fun calculateInSampleSize(fileUri: Uri, reqWidth: Int, reqHeight: Int): Int {
+        val options = BitmapFactory.Options()
+        options.inJustDecodeBounds = true
+        try {
+            var inputStream = contentResolver.openInputStream(fileUri)
 
+            //inJustDecodeBounds 값을 true 로 설정한 상태에서 decodeXXX() 를 호출.
+            //로딩 하고자 하는 이미지의 각종 정보가 options 에 설정 된다.
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream!!.close()
+            inputStream = null
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        //비율 계산........................
+        val (height: Int, width: Int) = options.run { outHeight to outWidth }
+        var inSampleSize = 1
+        //inSampleSize 비율 계산
+        if (height > reqHeight || width > reqWidth) {
 
-        val button1 = Button(this)
-        button1.text = "흑백 전환하기"
-        val button1Params = RelativeLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        button1Params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-        button1Params.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-        button1Params.bottomMargin = 400
-        button1Params.leftMargin = 150
-        relativeLayout.addView(button1, button1Params)
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
 
-            // 그레이 스케일
-        button1.setOnClickListener {
-//            val bitmapImg: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.test)
-            val options = BitmapFactory.Options()
-            val bitmapImg: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.test, options)
-            val width :Int = options.outWidth
-            val height :Int = options.outHeight
-
-            var pixels: IntArray = IntArray(width* height)
-            bitmapImg.getPixels(pixels, 0, width, 0, 0, width, height)
-
-            Log.i("?","$width   $height")
-
-            for (i in 0 until width * height) {
-                val pixel = pixels[i]
-
-                // RGB 값을 추출
-                val red = Color.red(pixel)
-                val green = Color.green(pixel)
-                val blue = Color.blue(pixel)
-
-                // RGB 값을 이용하여 흑백 값 계산
-                val gray = (red + green + blue) / 3
-
-                // 새로운 RGB 값 생성 (모든 색상 채널이 같은 값)
-                pixels[i] = Color.rgb(gray, gray, gray)
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
             }
-
-            // 새로운 비트맵 생성
-            val grayscaleBitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
-
-            // 그레이스케일 이미지를 ImageView에 표시
-            imageView.setImageBitmap(grayscaleBitmap)
-            imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
-
-            Log.i("Grayscale", "그레이스케일 이미지 생성 완료")
-
-//            bitmapImg.getPixels(pixels, 0, w, 0, 0, w, h)
-            Log.i("?"," ////   ${pixels.size}   ////   what / ${options.outWidth} : ${options.outHeight}")
         }
-
-        val button2 = Button(this)
-        button2.text = "Button 2"
-        val button2Params = RelativeLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        button2Params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-        button2Params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
-        button2Params.bottomMargin = 400
-        button2Params.rightMargin = 150
-        relativeLayout.addView(button2, button2Params)
-
-        button2.setOnClickListener {
-            Log.d("test","?!")
-        }
+        return inSampleSize
+    }
 
 
-        relativeLayout.addView(imageView)
+    private fun openCamera() {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(intent)
+    }
 
-        setContentView(relativeLayout)
+    private fun openGallery() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        galleryLauncher.launch(intent)
+    }
+
+    private fun startEditingActivity() {
+
+        val intent = Intent(this, SubActivity::class.java)
+        intent.putExtra("imagePath", selectedImageUri?.toString())
+        Log.i("?"," qwdqwdwqdqwdwqdwqdwqdwqdqwdwqdwqdwqdwdqwdwqdqwdwqdwqdwq>>>>>>>       $selectedImageUri          <<<<<qwdwqdwqdwqdqwdwqdwqdwqdwq")
+        startActivity(intent)
     }
 }
