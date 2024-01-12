@@ -214,73 +214,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun saveImageOnAboveAndroidQ(bitmap: Bitmap) {
-        val fileName = System.currentTimeMillis().toString() + ".png" // 파일이름 현재시간.png
+        val fileName = System.currentTimeMillis().toString() + ".jpg" // 파일이름 현재시간.jpg
 
-        /*
-        * ContentValues() 객체 생성.
-        * ContentValues는 ContentResolver가 처리할 수 있는 값을 저장해둘 목적으로 사용된다.
-        * */
         val contentValues = ContentValues()
         contentValues.apply {
-            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ImageSave") // 경로 설정
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName) // 파일이름을 put해준다.
-            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.IS_PENDING, 1) // 현재 is_pending 상태임을 만들어준다.
-            // 다른 곳에서 이 데이터를 요구하면 무시하라는 의미로, 해당 저장소를 독점할 수 있다.
+            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ImageSave")
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
         }
 
-        // 이미지를 저장할 uri를 미리 설정해놓는다.
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
         try {
-            if(uri != null) {
+            if (uri != null) {
                 val image = contentResolver.openFileDescriptor(uri, "w", null)
-                // write 모드로 file을 open한다.
 
-                if(image != null) {
+                if (image != null) {
                     val fos = FileOutputStream(image.fileDescriptor)
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-                    //비트맵을 FileOutputStream를 통해 compress한다.
+
+                    // JPEG 형식으로 압축하고 품질 설정
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+
                     fos.close()
 
                     contentValues.clear()
-                    contentValues.put(MediaStore.Images.Media.IS_PENDING, 0) // 저장소 독점을 해제한다.
+                    contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
                     contentResolver.update(uri, contentValues, null, null)
                 }
             }
-        } catch(e: FileNotFoundException) {
-            e.printStackTrace()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun saveImageOnUnderAndroidQ(bitmap: Bitmap) {
-        val fileName = System.currentTimeMillis().toString() + ".png"
-        val externalStorage = Environment.getExternalStorageDirectory().absolutePath
-        val path = "$externalStorage/DCIM/imageSave"
-        val dir = File(path)
-
-        if(dir.exists().not()) {
-            dir.mkdirs() // 폴더 없을경우 폴더 생성
-        }
-
-        try {
-            val fileItem = File("$dir/$fileName")
-            fileItem.createNewFile()
-            //0KB 파일 생성.
-
-            val fos = FileOutputStream(fileItem) // 파일 아웃풋 스트림
-
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-            //파일 아웃풋 스트림 객체를 통해서 Bitmap 압축.
-
-            fos.close() // 파일 아웃풋 스트림 객체 close
-
-            sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(fileItem)))
-            // 브로드캐스트 수신자에게 파일 미디어 스캔 액션 요청. 그리고 데이터로 추가된 파일에 Uri를 넘겨준다.
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
         } catch (e: IOException) {
@@ -289,6 +251,40 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
     }
+
+
+    private fun saveImageOnUnderAndroidQ(bitmap: Bitmap) {
+        val fileName = System.currentTimeMillis().toString() + ".jpg"
+        val externalStorage = Environment.getExternalStorageDirectory().absolutePath
+        val path = "$externalStorage/DCIM/imageSave"
+        val dir = File(path)
+
+        if (dir.exists().not()) {
+            dir.mkdirs()
+        }
+
+        try {
+            val fileItem = File("$dir/$fileName")
+            fileItem.createNewFile()
+
+            val fos = FileOutputStream(fileItem)
+
+            // JPEG 형식으로 압축하고 품질 설정
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+
+            fos.close()
+
+            // 미디어 스캔을 통해 갤러리에 반영
+            sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(fileItem)))
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun toggleGrayScaleFilter(imageView: ImageView) {
         // 흑백 필터 토글
         isGrayScaleEnabled = !isGrayScaleEnabled
