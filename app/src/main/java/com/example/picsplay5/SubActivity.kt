@@ -57,10 +57,10 @@ class SubActivity : AppCompatActivity() {
             bitmap?.let {
                 imageView.setImageBitmap(it)
             } ?: run {
-                 Toast.makeText(this, "이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             }
         } else {
-                Toast.makeText(this, "이미지 경로가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "이미지 경로가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
         }
 
 
