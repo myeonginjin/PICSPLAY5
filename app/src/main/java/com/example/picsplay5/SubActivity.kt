@@ -44,9 +44,34 @@ class SubActivity : AppCompatActivity() {
         imageView.setBackgroundColor(resources.getColor(android.R.color.white))
 
 
-
         val imagePath = intent.getStringExtra("imagePath")
+        val byteArray = intent.getByteArrayExtra("사진")
 
+        if (imagePath != null) {
+            // 갤러리에서 넘어온 경우
+            val imageUri = Uri.parse(imagePath)
+            val bitmap = getImageBitmap(imageUri)
+            // bitmap이 null이 아닌 경우에만 이미지뷰에 설정
+            bitmap?.let {
+                imageView.setImageBitmap(it)
+            } ?: run {
+                Toast.makeText(this, "이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        } else if (byteArray != null) {
+            // 카메라에서 넘어온 경우
+
+            Log.i("YourTag", "\n\n\n\n\n\n\n\n\n\n\nExceptionwdqwdqwdqwdwqdwqdwqddd/n/n/n/n/\n\n\n\n\n\n\n\n\n\n\n\n")
+
+            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            // bitmap이 null이 아닌 경우에만 이미지뷰에 설정
+            bitmap?.let {
+                imageView.setImageBitmap(it)
+            } ?: run {
+                Toast.makeText(this, "이미지를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "이미지 데이터가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
+        }
 
 
         if (!imagePath.isNullOrEmpty()) {
