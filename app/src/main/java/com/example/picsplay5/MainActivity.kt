@@ -80,17 +80,21 @@ class MainActivity : AppCompatActivity() {
         return 0
     }
 
-    private fun rotate(bitmap: Bitmap, degree: Int) : Bitmap {
+    private fun rotate(bitmap: Bitmap, degree: Int): Bitmap? {
         val matrix = Matrix()
         matrix.postRotate(degree.toFloat())
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix,true)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
+
+
 
     private val galleryLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val data: Intent? = result.data
                 data?.data?.let { selectedImageUri ->
+                    filePath = getRealPathFromURI(selectedImageUri)
+
                     // 이미지 선택 시 메인 뷰어에 이미지 설정
                     val calRatio = calculateInSampleSize(
                         selectedImageUri,
@@ -99,20 +103,35 @@ class MainActivity : AppCompatActivity() {
                     )
                     val option = BitmapFactory.Options()
                     option.inSampleSize = calRatio
-                    val bitmap = BitmapFactory.decodeStream(
-                        contentResolver.openInputStream(selectedImageUri),
-                        null,
-                        option
+                    var bitmap: Bitmap? = BitmapFactory.decodeFile(filePath, option)
+
+                    val exif = ExifInterface(filePath)
+                    val exifOrientation: Int = exif.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
                     )
 
+                    val exifDegree = exifOrientationToDegrees(exifOrientation)
+                    bitmap = rotate(bitmap!!, exifDegree)
 
                     bitmap?.let {
-                        currentImage = bitmap
-                        binding.userImageView.setImageBitmap(bitmap)
+                        currentImage = it
+                        binding.userImageView.setImageBitmap(it)
                     }
                 }
             }
         }
+    private fun getRealPathFromURI(uri: Uri): String {
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.let {
+            it.moveToFirst()
+            val idx = it.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
+            val path = it.getString(idx)
+            it.close()
+            return path
+        }
+        return uri.path ?: ""
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
