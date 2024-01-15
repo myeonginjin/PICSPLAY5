@@ -52,6 +52,8 @@ class SubActivity : AppCompatActivity() {
             val imageUri = Uri.parse(imagePath)
             val bitmap = getImageBitmap(imageUri)
             // bitmap이 null이 아닌 경우에만 이미지뷰에 설정
+
+            Log.i("test44 ","w : ${bitmap?.width}     h : ${bitmap?.height}")
             bitmap?.let {
                 imageView.setImageBitmap(it)
             } ?: run {
