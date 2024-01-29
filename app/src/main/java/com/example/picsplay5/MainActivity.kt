@@ -183,6 +183,9 @@ class MainActivity : AppCompatActivity() {
         applyGrayScaleBtn.setOnClickListener {
 
 
+            //이미지를 n회이상 가져올 때, 토글버튼이 현재 이미지뷰어에 있는 사진의 흑백 처리 유무를 나타내도록 수정해야됨
+            //현재 새로운 이미지가 입력됐을 때 흑백처리가되지않았음에도 on으로 나타남
+
             currentImage?.let {
                 toggleGrayScaleFilter(userImageView)
             } ?: run {
