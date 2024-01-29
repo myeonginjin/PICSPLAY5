@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
             bitmap = rotate(bitmap, exifDegree)
 
             //뷰어에 띄우기 및 데이터 보존
-            bitmap?.let {
+            bitmap.let {
                 currentImage = bitmap
                 binding.userImageView.setImageBitmap(bitmap)
             }
